@@ -900,7 +900,7 @@ public class FlutterBluePlugin implements FlutterPlugin, ActivityAware, MethodCa
             intent.addAction(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             intent.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
             intent.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
-            registerReceiver(searchDevices, intent);
+            activity.registerReceiver(searchDevices, intent);
         }catch (Exception e){
             e.printStackTrace();
         }
