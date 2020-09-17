@@ -31,6 +31,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.ParcelUuid;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -746,11 +747,12 @@ public class FlutterBluePlugin implements FlutterPlugin, ActivityAware, MethodCa
             settings = Protos.ScanSettings.newBuilder().mergeFrom(data).build();
             allowDuplicates = settings.getAllowDuplicates();
             macDeviceScanned.clear();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                startScan21(settings);
-            } else {
-                startScan18(settings);
-            }
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//                startScan21(settings);
+//            } else {
+//                startScan18(settings);
+//            }
+            startScanDiscovery();
             result.success(null);
         } catch (Exception e) {
             result.error("startScan", e.getMessage(), e);
@@ -758,11 +760,12 @@ public class FlutterBluePlugin implements FlutterPlugin, ActivityAware, MethodCa
     }
 
     private void stopScan() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            stopScan21();
-        } else {
-            stopScan18();
-        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//            stopScan21();
+//        } else {
+//            stopScan18();
+//        }
+        stopScanDiscovery();
     }
 
     private ScanCallback scanCallback21;
@@ -853,6 +856,65 @@ public class FlutterBluePlugin implements FlutterPlugin, ActivityAware, MethodCa
 
     private void stopScan18() {
         mBluetoothAdapter.stopLeScan(getScanCallback18());
+    }
+
+    private BroadcastReceiver searchDevices = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            System.out.println("action=========="+action);
+            if (action.equals(BluetoothDevice.ACTION_FOUND)) { //found device
+                BluetoothDevice device = intent
+                        .getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                String str = device.getName() + "|" + device.getAddress();
+                System.out.println("BlueTooth搜索到的设备:"+str);
+                if (!allowDuplicates && device != null && device.getAddress() != null) {
+                    if (macDeviceScanned.contains(device.getAddress())) return;
+                    macDeviceScanned.add(device.getAddress());
+                }
+
+                Protos.ScanResult scanResult = ProtoMaker.from(device, null, 0);
+                invokeMethodUIThread("ScanResult", scanResult.toByteArray());
+            } else if (action.equals(BluetoothAdapter.ACTION_DISCOVERY_STARTED)) {
+//                Toast.makeText(getBaseContext(), "正在扫描", Toast.LENGTH_SHORT).show();
+            } else if (action
+                    .equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)) {
+//                Toast.makeText(getBaseContext(), "扫描完成，点击列表中的设备来尝试连接", Toast.LENGTH_SHORT).show();
+            }
+        }
+    };
+
+    private void startScanDiscovery() throws IllegalStateException {
+        try{
+            if (!mBluetoothAdapter.isDiscovering()) {
+                //搜索蓝牙设备
+                mBluetoothAdapter.startDiscovery();
+            }
+            // 注册Receiver来获取蓝牙设备相关的结果
+            IntentFilter intent = new IntentFilter();
+            intent.addAction(BluetoothDevice.ACTION_FOUND); // 用BroadcastReceiver来取得搜索结果
+            intent.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+            intent.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+            intent.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
+            intent.addAction(BluetoothAdapter.ACTION_LOCAL_NAME_CHANGED);
+            intent.addAction(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            intent.addAction(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            intent.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
+            intent.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+            registerReceiver(searchDevices, intent);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    private void stopScanDiscovery() {
+        try{
+            if (mBluetoothAdapter.isDiscovering()) {
+                //搜索蓝牙设备
+                mBluetoothAdapter.cancelDiscovery();
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
