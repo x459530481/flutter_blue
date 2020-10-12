@@ -279,48 +279,72 @@ public class FlutterBluePlugin implements FlutterPlugin, ActivityAware, MethodCa
 
             case "connect":
             {
+                System.out.println("connect: 111111" );
                 byte[] data = call.arguments();
+                System.out.println("connect: 222222" );
                 Protos.ConnectRequest options;
+                System.out.println("connect: 333333" );
                 try {
+                    System.out.println("connect: 4444444" );
                     options = Protos.ConnectRequest.newBuilder().mergeFrom(data).build();
+                    System.out.println("connect: 555555" );
                 } catch (InvalidProtocolBufferException e) {
+                    System.out.println("connect: 66666" );
                     result.error("RuntimeException", e.getMessage(), e);
                     break;
                 }
+                System.out.println("connect: 77777" );
                 String deviceId = options.getRemoteId();
+                System.out.println("connect: 888888" );
                 BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(deviceId);
+                System.out.println("connect: 999999" );
                 boolean isConnected = mBluetoothManager.getConnectedDevices(BluetoothProfile.GATT).contains(device);
 
+                System.out.println("connect: aaaaaaa" );
                 // If device is already connected, return error
                 if(mDevices.containsKey(deviceId) && isConnected) {
+                    System.out.println("connect: bbbbbbbbb" );
                     result.error("already_connected", "connection with device already exists", null);
                     return;
                 }
 
+                System.out.println("connect: ccccccc" );
                 // If device was connected to previously but is now disconnected, attempt a reconnect
                 if(mDevices.containsKey(deviceId) && !isConnected) {
+                    System.out.println("connect: ddddddd" );
                     if(mDevices.get(deviceId).gatt.connect()){
+                        System.out.println("connect: eeeeeee" );
                         result.success(null);
                     } else {
+                        System.out.println("connect: fffffff" );
                         result.error("reconnect_error", "error when reconnecting to device", null);
                     }
                     return;
                 }
 
+                System.out.println("connect: gggggg" );
                 // New request, connect and add gattServer to Map
                 BluetoothGatt gattServer;
+                System.out.println("connect: hhhhhh" );
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    System.out.println("connect: iiiiii" );
                     gattServer = device.connectGatt(activity, options.getAndroidAutoConnect(), mGattCallback, BluetoothDevice.TRANSPORT_LE);
+                    System.out.println("connect: jjjjjj" );
                 } else {
+                    System.out.println("connect: kkkkkkk" );
                     gattServer = device.connectGatt(activity, options.getAndroidAutoConnect(), mGattCallback);
+                    System.out.println("connect: lllllll" );
                 }
+                System.out.println("connect: mmmmmmm" );
                 mDevices.put(deviceId, new BluetoothDeviceCache(gattServer));
+                System.out.println("connect: nnnnnnn" );
                 result.success(null);
                 break;
             }
 
             case "disconnect":
             {
+                System.out.println("connect: ooooooo" );
                 String deviceId = (String)call.arguments;
                 BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(deviceId);
                 int state = mBluetoothManager.getConnectionState(device, BluetoothProfile.GATT);

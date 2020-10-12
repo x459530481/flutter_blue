@@ -67,9 +67,10 @@ class BluetoothOffScreen extends StatelessWidget {
 class FindDevicesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    print('00000000000');
     return Scaffold(
       appBar: AppBar(
-        title: Text('Find Devices'),
+        title: Text('Find Devices 0000'),
       ),
       body: RefreshIndicator(
         onRefresh: () =>
@@ -113,14 +114,15 @@ class FindDevicesScreen extends StatelessWidget {
                 builder: (c, snapshot) => Column(
                   children: snapshot.data
                       .map(
-                        (r) => ScanResultTile(
-                          result: r,
-                          onTap: () => Navigator.of(context)
-                              .push(MaterialPageRoute(builder: (context) {
-                            r.device.connect();
-                            return DeviceScreen(device: r.device);
-                          })),
-                        ),
+                        (r) => scanResultView(context,r)
+//                            ScanResultTile(
+//                          result: r,
+//                          onTap: () => Navigator.of(context)
+//                              .push(MaterialPageRoute(builder: (context) {
+//                            r.device.connect();
+//                            return DeviceScreen(device: r.device);
+//                          })),
+//                        ),
                       )
                       .toList(),
                 ),
@@ -147,6 +149,17 @@ class FindDevicesScreen extends StatelessWidget {
           }
         },
       ),
+    );
+  }
+
+  Widget scanResultView(BuildContext context,ScanResult scanResult){
+    return GestureDetector(
+      onTap: () => Navigator.of(context)
+          .push(MaterialPageRoute(builder: (context) {
+        scanResult.device.connect();
+        return DeviceScreen(device: scanResult.device);
+      })),
+      child: Text(scanResult.device.name),
     );
   }
 }
@@ -213,16 +226,20 @@ class DeviceScreen extends StatelessWidget {
             builder: (c, snapshot) {
               VoidCallback onPressed;
               String text;
+              print('!!!!!!!!' + snapshot.data.toString());
               switch (snapshot.data) {
                 case BluetoothDeviceState.connected:
                   onPressed = () => device.disconnect();
                   text = 'DISCONNECT';
+                  print('11111111');
                   break;
                 case BluetoothDeviceState.disconnected:
                   onPressed = () => device.connect();
                   text = 'CONNECT';
+                  print('222222222');
                   break;
                 default:
+                  print('33333333');
                   onPressed = null;
                   text = snapshot.data.toString().substring(21).toUpperCase();
                   break;
